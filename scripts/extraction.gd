@@ -34,13 +34,13 @@ func _ready() -> void:
 	msg_label.text = "目标：搜索容器获取物资 → 找到「稳定核心」→ 带到传送门撤离。"
 
 
+const WORLD_HALF_W := 1500.0   # 地图半宽（世界单位）
+const WORLD_HALF_H := 900.0    # 地图半高
+const GROUND_TILE := 480.0     # 每块地面贴图显示尺寸
+
+
 func _build_world() -> void:
-	var bg := Polygon2D.new()
-	bg.polygon = PackedVector2Array([
-		Vector2(-1500, -900), Vector2(1500, -900), Vector2(1500, 900), Vector2(-1500, 900)])
-	bg.color = Color(0.08, 0.10, 0.13)
-	bg.z_index = -10
-	add_child(bg)
+	_build_ground()
 
 	player = Player.new()
 	player.position = Vector2.ZERO
@@ -54,6 +54,24 @@ func _build_world() -> void:
 	artifact = ExtractItem.new()
 	artifact.position = Vector2(-700, -400)
 	add_child(artifact)
+
+
+func _build_ground() -> void:
+	# 用一张可平铺的地面贴图，铺满整张地图。简单、可复用，方便以后换素材。
+	var tex := load("res://assets/antiworld_ground_tile.jpg") as Texture2D
+	if tex == null:
+		return
+	var g := Sprite2D.new()
+	g.texture = tex
+	g.centered = false           # 从左上角开始铺
+	g.z_index = -10
+	g.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
+	g.region_enabled = true
+	var s: float = GROUND_TILE / tex.get_width()   # 把贴图缩到指定世界尺寸
+	g.scale = Vector2(s, s)
+	g.position = Vector2(-WORLD_HALF_W, -WORLD_HALF_H)
+	g.region_rect = Rect2(0, 0, (WORLD_HALF_W * 2.0) / s, (WORLD_HALF_H * 2.0) / s)
+	add_child(g)
 
 
 func _spawn_enemies() -> void:
