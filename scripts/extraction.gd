@@ -57,21 +57,36 @@ func _build_world() -> void:
 
 
 func _build_ground() -> void:
-	# 用一张可平铺的地面贴图，铺满整张地图。简单、可复用，方便以后换素材。
-	var tex := load("res://assets/antiworld_ground_tile.jpg") as Texture2D
+	# 用 TileMapLayer 铺地面：把整张贴图当一块 GROUND_TILE 大小的 tile，铺满地图。
+	var tex := load("res://assets/antiworld_ground_tile_v2.jpg") as Texture2D
 	if tex == null:
 		return
-	var g := Sprite2D.new()
-	g.texture = tex
-	g.centered = false           # 从左上角开始铺
-	g.z_index = -10
-	g.texture_repeat = CanvasItem.TEXTURE_REPEAT_ENABLED
-	g.region_enabled = true
-	var s: float = GROUND_TILE / tex.get_width()   # 把贴图缩到指定世界尺寸
-	g.scale = Vector2(s, s)
-	g.position = Vector2(-WORLD_HALF_W, -WORLD_HALF_H)
-	g.region_rect = Rect2(0, 0, (WORLD_HALF_W * 2.0) / s, (WORLD_HALF_H * 2.0) / s)
-	add_child(g)
+
+	# 整张贴图缩成 GROUND_TILE 大小，再作为单一 tile（否则 TileSet 会按原尺寸绘制，导致贴图异常或不可见）
+	var img := tex.get_image()
+	img.resize(int(GROUND_TILE), int(GROUND_TILE), Image.INTERPOLATE_BILINEAR)
+	tex = ImageTexture.create_from_image(img)
+
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = tex
+	atlas.texture_region_size = Vector2i(int(GROUND_TILE), int(GROUND_TILE))
+	atlas.create_tile(Vector2i.ZERO)   # 必须先显式创建 (0,0) 这个 tile，set_cell 才会绘制
+
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(int(GROUND_TILE), int(GROUND_TILE))
+	var src_id := tile_set.add_source(atlas)
+
+	var layer := TileMapLayer.new()
+	layer.tile_set = tile_set
+	layer.z_index = -10
+	layer.position = Vector2(-WORLD_HALF_W, -WORLD_HALF_H)   # 从地图左上角开始
+
+	var cols := int(ceil(WORLD_HALF_W * 2.0 / GROUND_TILE))
+	var rows := int(ceil(WORLD_HALF_H * 2.0 / GROUND_TILE))
+	for r in range(rows):
+		for c in range(cols):
+			layer.set_cell(Vector2i(c, r), src_id, Vector2i(0, 0))
+	add_child(layer)
 
 
 func _spawn_enemies() -> void:
