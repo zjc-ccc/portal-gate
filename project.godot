@@ -17,9 +17,37 @@ config/features=PackedStringArray("4.6")
 [autoload]
 
 GameState="*res://scripts/game_state.gd"
+Wind="*res://scripts/wind.gd"
 
 [display]
 
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
+
+[rendering]
+
+textures/canvas_textures/default_texture_filter=0
+
+[shader_globals]
+
+wind_time={
+"type": "float",
+"value": 0.0
+}
+wind_strength={
+"type": "float",
+"value": 1.0
+}
+wind_dir={
+"type": "vec2",
+"value": Vector2(1, 0)
+}
+palette_dark={
+"type": "color",
+"value": Color(0.13, 0.32, 0.16, 1)
+}
+palette_light={
+"type": "color",
+"value": Color(0.47, 0.79, 0.36, 1)
+}

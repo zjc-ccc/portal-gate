@@ -22,7 +22,20 @@ var msg_label: Label
 var prompt_label: Label
 
 
+const WORLD_HALF_W := 1500.0   # 地图半宽（世界单位）
+const WORLD_HALF_H := 900.0    # 地图半高
+const GROUND_TILE := 480.0     # 每块地面贴图显示尺寸
+
+# 反世界冷色调色板：树冠靠 shader 换色复用同一张贴图
+const COLD_DARK := Color(0.07, 0.12, 0.24)
+const COLD_LIGHT := Color(0.42, 0.66, 0.86)
+
+
 func _ready() -> void:
+	# 反世界：冷色 + 略急的风
+	Wind.set_palette(COLD_DARK, COLD_LIGHT)
+	Wind.speed = 1.15
+
 	_build_world()
 	_build_hud()
 	_spawn_enemies()
@@ -34,13 +47,9 @@ func _ready() -> void:
 	msg_label.text = "目标：搜索容器获取物资 → 找到「稳定核心」→ 带到传送门撤离。"
 
 
-const WORLD_HALF_W := 1500.0   # 地图半宽（世界单位）
-const WORLD_HALF_H := 900.0    # 地图半高
-const GROUND_TILE := 480.0     # 每块地面贴图显示尺寸
-
-
 func _build_world() -> void:
 	_build_ground()
+	_build_forest()
 
 	player = Player.new()
 	player.position = Vector2.ZERO
@@ -54,6 +63,21 @@ func _build_world() -> void:
 	artifact = ExtractItem.new()
 	artifact.position = Vector2(-700, -400)
 	add_child(artifact)
+
+
+func _build_forest() -> void:
+	# 一小片树林 + 零散树：位置错落 → shader 相位天然错开，无需逐棵设置
+	var spots := [
+		Vector2(-1150, -560), Vector2(-980, -680), Vector2(-820, -540),
+		Vector2(-1080, -380), Vector2(-1300, -680), Vector2(-700, -760),
+		Vector2(1150, 620), Vector2(980, 700), Vector2(820, 660),
+		Vector2(1280, 420), Vector2(620, 760),
+		Vector2(1350, -200), Vector2(-1350, 200),
+	]
+	for s in spots:
+		var t := ForestTree.new()
+		t.position = s
+		add_child(t)
 
 
 func _build_ground() -> void:

@@ -13,6 +13,11 @@ var hp: float = MAX_HP
 var mag: int = MAG_SIZE
 var fire_cd: float = 0.0
 var gun_pivot: Node2D
+var body_sprite: Sprite2D
+var idle_tex: Texture2D
+var walk_textures: Array[Texture2D] = []
+var anim_t: float = 0.0
+const WALK_FPS := 10.0
 var controls_enabled: bool = true  # 搜索界面打开时冻结移动/射击
 
 
@@ -25,11 +30,14 @@ func _ready() -> void:
 	shape.shape = c
 	add_child(shape)
 
-	var body := Polygon2D.new()
-	body.polygon = PackedVector2Array([
-		Vector2(-12, -12), Vector2(12, -12), Vector2(12, 12), Vector2(-12, 12)])
-	body.color = Color("3a86ff")
-	add_child(body)
+	# 像素精灵身体:素材朝上画,朝向用 rotation 无级转身,走路切 6 帧循环
+	body_sprite = Sprite2D.new()
+	idle_tex = load("res://assets/characters/player/player_idle.png")
+	body_sprite.texture = idle_tex
+	add_child(body_sprite)
+	for i in range(6):
+		var t: Texture2D = load("res://assets/characters/player/player_walk_%d.png" % i)
+		walk_textures.append(t)
 
 	gun_pivot = Node2D.new()
 	add_child(gun_pivot)
@@ -55,6 +63,7 @@ func _physics_process(delta: float) -> void:
 	var aim := get_global_mouse_position() - global_position
 	if aim.length() > 1.0:
 		gun_pivot.rotation = aim.angle()
+		body_sprite.rotation = aim.angle() + PI / 2.0  # 素材朝上画,补 90°
 
 	var dir := Vector2.ZERO
 	if Input.is_physical_key_pressed(KEY_W) or Input.is_physical_key_pressed(KEY_UP):
@@ -67,6 +76,13 @@ func _physics_process(delta: float) -> void:
 		dir.x += 1
 	velocity = dir.normalized() * SPEED
 	move_and_slide()
+	# 移动时播走路循环,静止回待机帧
+	if velocity.length() > 1.0:
+		anim_t += delta * WALK_FPS
+		body_sprite.texture = walk_textures[int(anim_t) % walk_textures.size()]
+	else:
+		anim_t = 0.0
+		body_sprite.texture = idle_tex
 	global_position.x = clampf(global_position.x, -1200.0, 1200.0)
 	global_position.y = clampf(global_position.y, -680.0, 680.0)
 
